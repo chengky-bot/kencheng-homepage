@@ -161,9 +161,10 @@
             { name: "四素句寫作", url: "https://chat.qwen.ai/s/deploy/t_51b2aac5-2727-4c20-81c2-85201717ac69", desc: "基於 Qwen 的寫作輔助，練習時間、地點、人物、事件的造句結構。", category: "Ken Cheng製作的TDA", subcategory: "教學TDA", icon: "PenLine" },
             { name: "朗讀文章工具", url: "https://chat.qwen.ai/s/deploy/t_35a735bb-7e27-421a-b9f3-1a4910b71ca1", desc: "AI 語音朗讀文章，輔助閱讀障礙或語言聽力訓練。", category: "Ken Cheng製作的TDA", subcategory: "教學TDA", icon: "Volume2" },
             { name: "課堂情緒溫度計", url: "https://v0-classroom-mood-thermometer.vercel.app/", desc: "檢測課堂情緒氛圍的互動工具 (v0 生成)。", category: "Ken Cheng製作的TDA", subcategory: "教學TDA", icon: "Thermometer" },
+            { name: "早安天氣與早餐", url: "https://morning-meal-mate.lovable.app/", desc: "結合天氣資訊的早餐選擇助手，培養生活自理能力。", category: "Ken Cheng製作的TDA", subcategory: "教學TDA", icon: "Sun" },
             { name: "打字練習工具", url: "https://app-8bfe8765.base44.app", desc: "簡潔的線上打字訓練，提升輸入速度與準確度。", category: "Ken Cheng製作的TDA", subcategory: "電腦", icon: "Keyboard" },
             { name: "交通燈模擬器", url: "https://crossing-light.preview.emergentagent.com/", desc: "互動式交通號誌模擬，適合兒童交通安全教育。", category: "Ken Cheng製作的TDA", subcategory: "科學", icon: "Siren" },
-            { name: "早安天氣與早餐", url: "https://morning-meal-mate.lovable.app/", desc: "結合天氣資訊的早餐選擇助手，培養生活自理能力。", category: "Ken Cheng製作的TDA", subcategory: "科學", icon: "Sun" },
+            { name: "水循環消消樂", url: "https://chengky-bot.github.io/water-cycle-candycrush/", desc: "趣味的水循環主題消消樂遊戲，寓教於樂。", category: "Ken Cheng製作的TDA", subcategory: "科學", icon: "Droplets" },
             { name: "蒸發模擬工具", url: "https://chat.qwen.ai/s/deploy/t_873447cd-c24f-4839-978b-e0d1aa3beff9", desc: "基於 Qwen 的科學模擬工具，探索蒸發現象的原理。", category: "Ken Cheng製作的TDA", subcategory: "科學", icon: "Cloud" },
             { name: "磁力遊戲", url: "https://poe.com/magnetic_game", desc: "探索磁鐵的特性與互動遊戲。", category: "Ken Cheng製作的TDA", subcategory: "科學", icon: "Magnet" },
             { name: "物質溶解實驗", url: "https://v0-elementary-science-experiment.vercel.app/", desc: "觀察不同物質在水中的溶解現象。", category: "Ken Cheng製作的TDA", subcategory: "科學", icon: "Beaker" },
@@ -215,6 +216,7 @@
             { name: "Colorify AI", url: "https://colorifyai.art/", desc: "AI 生成著色頁，適合親子共創。", category: "教育學習", icon: "Brush" },
             { name: "The Toymaker", url: "https://www.thetoymaker.com/", desc: "免費紙藝模型與摺紙資源。", category: "教育學習", icon: "Paperclip" },
             { name: "PhET Interactive Simulations", url: "https://phet.colorado.edu/", desc: "科羅拉多大學開發的免費互動數理模擬教學資源。", category: "科學與 3D", icon: "Atom" },
+            { name: "Explore.org", url: "https://explore.org/", desc: "全球最大的自然直播相機網絡，提供世界各地的野生動物即時影像。", category: "科學與 3D", icon: "Globe" },
             { name: "BioRender", url: "https://www.biorender.com/", desc: "專業科學圖示製作平台，生命科學首選。", category: "科學與 3D", icon: "Beaker" },
             { name: "Animagraffs", url: "https://animagraffs.com/", desc: "剖面圖解機械與生物運作原理。", category: "科學與 3D", icon: "Settings" },
             { name: "Intangible Studio", url: "https://studio.intangible.ai/", desc: "文字生成 3D 模型與場景。", category: "科學與 3D", icon: "Box" },
@@ -224,6 +226,7 @@
             { name: "Toolify AI", url: "https://www.toolify.ai/", desc: "收錄超過 26,000 個 AI 工具的目錄。", category: "實用工具", icon: "Database" },
             { name: "Uiverse", url: "https://uiverse.io/", desc: "最大的開源 UI 元件庫 (CSS/Tailwind)。", category: "實用工具", icon: "Component" },
             { name: "iLovePDF", url: "https://www.ilovepdf.com/zh-tw", desc: "PDF 全能工具箱：合併、壓縮、轉檔。", category: "實用工具", icon: "File" },
+            { name: "線上影片圖片下載器", url: "https://snapany.com/zh-Hant", desc: "SnapAny 萬能下載工具，支援多種平台的影片與圖片保存。", category: "實用工具", icon: "Download" },
         ];
 
         // --- Icons Mapping ---
@@ -294,7 +297,9 @@
             Send: <i data-lucide="send"></i>,
             Lightbulb: <i data-lucide="lightbulb"></i>,
             Eye: <i data-lucide="eye"></i>,
-            Moon: <i data-lucide="moon"></i>
+            Moon: <i data-lucide="moon"></i>,
+            Globe: <i data-lucide="globe"></i>,
+            Droplets: <i data-lucide="droplets"></i>
         };
 
         const LucideIcon = ({ name, className }) => {
