@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>教學設計輔助工具 (TDA) | Resource Dashboard</title>
+    <title>Ken Cheng的 教學設計輔助工具 (TDA) | Resource Dashboard</title>
     
     <!-- React & ReactDOM -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
@@ -24,6 +24,7 @@
     <!-- Tailwind Configuration -->
     <script>
         tailwind.config = {
+            darkMode: 'class', // Enable class-based dark mode
             theme: {
                 extend: {
                     colors: {
@@ -33,9 +34,18 @@
                         surface: '#ffffff',
                         text: '#0f172a', // Slate 900
                         muted: '#64748b', // Slate 500
+                        // Cyber Mode Colors
+                        cyber: {
+                            bg: '#020617', // Slate 950
+                            card: '#0f172a', // Slate 900
+                            border: '#22d3ee', // Cyan 400
+                            text: '#a5f3fc', // Cyan 200
+                            accent: '#d946ef', // Fuchsia 500
+                        }
                     },
                     fontFamily: {
                         sans: ['"Noto Sans TC"', 'sans-serif'],
+                        mono: ['"JetBrains Mono"', 'monospace'], // For Cyber feel
                     },
                     animation: {
                         'gradient-x': 'gradient-x 3s ease infinite',
@@ -43,6 +53,9 @@
                         'fade-in': 'fadeIn 0.5s ease-out forwards',
                         'fade-in-up': 'fadeInUp 0.7s ease-out forwards',
                         'scale-in': 'scaleIn 0.2s ease-out forwards',
+                        'bounce-slight': 'bounceSlight 1s infinite',
+                        'pulse-glow': 'pulseGlow 2s infinite',
+                        'neon-pulse': 'neonPulse 2s infinite alternate',
                     },
                     keyframes: {
                         'gradient-x': {
@@ -64,6 +77,18 @@
                         scaleIn: {
                             '0%': { opacity: '0', transform: 'scale(0.9)' },
                             '100%': { opacity: '1', transform: 'scale(1)' },
+                        },
+                        bounceSlight: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-25%)' },
+                        },
+                        pulseGlow: {
+                            '0%, 100%': { boxShadow: '0 0 0 0 rgba(79, 70, 229, 0.4)' },
+                            '50%': { boxShadow: '0 0 0 10px rgba(79, 70, 229, 0)' },
+                        },
+                        neonPulse: {
+                            '0%': { boxShadow: '0 0 5px #22d3ee, 0 0 10px #22d3ee' },
+                            '100%': { boxShadow: '0 0 10px #22d3ee, 0 0 20px #22d3ee' },
                         }
                     }
                 }
@@ -78,11 +103,21 @@
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         
+        /* Dark Mode Scrollbar */
+        .dark ::-webkit-scrollbar-track { background: #020617; }
+        .dark ::-webkit-scrollbar-thumb { background: #1e293b; border: 1px solid #22d3ee; }
+        
         .card-hover { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .card-hover:hover {
             transform: translateY(-4px);
             box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.1), 0 4px 6px -2px rgba(79, 70, 229, 0.05);
             border-color: #c7d2fe;
+        }
+        
+        /* Cyber Mode Card Hover */
+        .dark .card-hover:hover {
+            box-shadow: 0 0 15px rgba(34, 211, 238, 0.3), 0 0 5px rgba(217, 70, 239, 0.3);
+            border-color: #22d3ee;
         }
 
         .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -96,13 +131,27 @@
             background-clip: text;
             animation: gradient-x 3s linear infinite;
         }
+        
+        /* Cyber Grid Background Effect */
+        .cyber-grid {
+            background-size: 40px 40px;
+            background-image: linear-gradient(to right, rgba(34, 211, 238, 0.05) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(34, 211, 238, 0.05) 1px, transparent 1px);
+        }
+
+        .ai-response ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1rem; }
+        .ai-response ol { list-style-type: decimal; padding-left: 1.5rem; margin-bottom: 1rem; }
+        .ai-response p { margin-bottom: 0.75rem; }
+        .ai-response strong { color: #4f46e5; font-weight: 700; }
+        .dark .ai-response strong { color: #22d3ee; }
     </style>
 </head>
-<body class="bg-background text-text antialiased">
+<body class="bg-background text-text antialiased transition-colors duration-500">
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useMemo } = React;
+        const { useState, useEffect, useMemo, useRef } = React;
+        const apiKey = ""; // API Key provided by environment
 
         // --- Data Structure ---
         const rawData = [
@@ -129,12 +178,12 @@
             { name: "Delightex", url: "https://edu.delightex.com/Auth", desc: "VR/AR 內容創作與教學平台，啟發學生創造力。", category: "常用校本電子平台/工具", icon: "Glasses" },
 
             // --- Dev Tools Vibe coding ---
+            { name: "Emergent", url: "https://app.emergent.sh/home", desc: "AI 協作平台，幫助團隊進行創意發想與專案規劃。", category: "開發工具 Vibe coding", icon: "Lightbulb" },
             { name: "Cursor", url: "https://cursor.com/zh-Hant", desc: "內建強大 AI 的新一代程式編輯器。", category: "開發工具 Vibe coding", icon: "Terminal" },
             { name: "Lovable", url: "https://lovable.dev/", desc: "自然語言建構 Web 應用，即時生成代碼。", category: "開發工具 Vibe coding", icon: "Code2" },
             { name: "Bolt", url: "https://bolt.new/", desc: "對話生成完整全端應用，支援即時預覽。", category: "開發工具 Vibe coding", icon: "Cpu" },
             { name: "v0", url: "https://v0.app/", desc: "Vercel 出品，文字生成 React UI 元件。", category: "開發工具 Vibe coding", icon: "Layout" },
             { name: "Replit", url: "https://replit.com/", desc: "瀏覽器即時協作開發環境，內建 AI。", category: "開發工具 Vibe coding", icon: "Cloud" },
-            { name: "Napkin AI", url: "https://www.napkin.ai/", desc: "將代碼轉換為清晰圖解與流程圖。", category: "開發工具 Vibe coding", icon: "Share2" },
             { name: "Base44", url: "https://base44.com/", desc: "AI 輔助產品設計與品牌建構平台。", category: "開發工具 Vibe coding", icon: "Layers" },
 
             // --- External Tools ---
@@ -144,10 +193,14 @@
             { name: "Gemini", url: "https://gemini.google.com/", desc: "Google 多模態助手，整合 Google 生態系。", category: "AI 助手", icon: "Sparkles" },
             { name: "Kimi", url: "https://www.kimi.com/", desc: "超長上下文理解，擅長整理資料與簡報。", category: "AI 助手", icon: "FileText" },
             { name: "Manus", url: "https://manus.im/", desc: "AI 工作流自動化，一鍵產出報告。", category: "AI 助手", icon: "Workflow" },
-            { name: "Recraft", url: "https://www.recraft.ai/", desc: "支援 SVG 輸出的專業設計 AI，品牌一致性高。", category: "設計與圖像", icon: "PenTool" },
-            { name: "Cleanup.pictures", url: "https://cleanup.pictures/", desc: "智慧移除照片中的人物或雜物。", category: "設計與圖像", icon: "Eraser" },
-            { name: "Lovart", url: "https://www.lovart.ai/", desc: "全流程自動化設計，從概念到 3D。", category: "設計與圖像", icon: "Palette" },
-            { name: "OpenNana", url: "https://opennana.com/awesome-prompt-gallery/", desc: "高品質 Midjourney/DALL·E 提示詞庫。", category: "設計與圖像", icon: "Library" },
+            
+            // Design, Image & Flowchart
+            { name: "Recraft", url: "https://www.recraft.ai/", desc: "支援 SVG 輸出的專業設計 AI，品牌一致性高。", category: "設計、圖像與流程圖", icon: "PenTool" },
+            { name: "Cleanup.pictures", url: "https://cleanup.pictures/", desc: "智慧移除照片中的人物或雜物。", category: "設計、圖像與流程圖", icon: "Eraser" },
+            { name: "Lovart", url: "https://www.lovart.ai/", desc: "全流程自動化設計，從概念到 3D。", category: "設計、圖像與流程圖", icon: "Palette" },
+            { name: "OpenNana", url: "https://opennana.com/awesome-prompt-gallery/", desc: "高品質 Midjourney/DALL·E 提示詞庫。", category: "設計、圖像與流程圖", icon: "Library" },
+            { name: "Napkin AI", url: "https://www.napkin.ai/", desc: "將代碼轉換為清晰圖解與流程圖。", category: "設計、圖像與流程圖", icon: "Share2" },
+
             { name: "Wan Video", url: "https://create.wan.video/", desc: "文字生成高品質短影片，支援語音合成。", category: "影片與動畫", icon: "Video" },
             { name: "SkyReels", url: "https://www.skyreels.ai/", desc: "專注於社交媒體短影音生成的 AI。", category: "影片與動畫", icon: "Film" },
             { name: "Descript", url: "https://www.descript.com/?redirect=false", desc: "像編輯文件一樣剪輯影片，支援 AI 語音。", category: "影片與動畫", icon: "Mic" },
@@ -235,7 +288,13 @@
             Glasses: <i data-lucide="glasses"></i>,
             Layers: <i data-lucide="layers"></i>,
             Magnet: <i data-lucide="magnet"></i>,
-            Ship: <i data-lucide="ship"></i>
+            Ship: <i data-lucide="ship"></i>,
+            ArrowUp: <i data-lucide="arrow-up"></i>,
+            SparklesIcon: <i data-lucide="sparkles"></i>, 
+            Send: <i data-lucide="send"></i>,
+            Lightbulb: <i data-lucide="lightbulb"></i>,
+            Eye: <i data-lucide="eye"></i>,
+            Moon: <i data-lucide="moon"></i>
         };
 
         const LucideIcon = ({ name, className }) => {
@@ -245,14 +304,192 @@
             return <span className={className}>{IconMap[name] || <i data-lucide="link"></i>}</span>;
         };
 
+        // --- AI Assistant Component ---
+        const AiAssistant = () => {
+            const [isOpen, setIsOpen] = useState(false);
+            const [query, setQuery] = useState("");
+            const [response, setResponse] = useState("");
+            const [loading, setLoading] = useState(false);
+            const chatEndRef = useRef(null);
+
+            const toggleChat = () => setIsOpen(!isOpen);
+
+            const generateResponse = async () => {
+                if (!query.trim()) return;
+                
+                setLoading(true);
+                setResponse("");
+                
+                const toolsContext = JSON.stringify(rawData.map(t => ({name: t.name, desc: t.desc, category: t.category, subcategory: t.subcategory})));
+                const systemPrompt = `你是 Ken Cheng 的教學設計助手。你的任務是根據使用者的教學主題，建議一個簡短的創意教學活動，並從以下工具列表中推薦 2-3 個最合適的工具來輔助教學。
+                
+                工具列表:
+                ${toolsContext}
+                
+                請用繁體中文回答，語氣專業且友善。回答結構如下：
+                1. **活動構想**：簡述活動內容。
+                2. **推薦工具**：列出工具名稱並說明為何適合。
+                3. **實施建議**：如何將工具融入該活動。
+                `;
+
+                const userMessage = {
+                    contents: [{
+                        parts: [{ text: `用戶輸入：${query}\n\n${systemPrompt}` }]
+                    }]
+                };
+
+                try {
+                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(userMessage)
+                    });
+
+                    if (!res.ok) {
+                        throw new Error(`API Error: ${res.status}`);
+                    }
+
+                    const data = await res.json();
+                    const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "抱歉，我現在無法產生回應，請稍後再試。";
+                    setResponse(aiText);
+                } catch (error) {
+                    console.error("AI Error:", error);
+                    setResponse("連線發生錯誤，請檢查網路或稍後再試。");
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            return (
+                <>
+                    <button 
+                        onClick={toggleChat}
+                        className="fixed bottom-36 right-6 z-40 flex items-center justify-center p-3.5 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-full shadow-lg hover:shadow-indigo-500/30 hover:scale-110 transition-all duration-300 animate-pulse-glow"
+                        title="AI 教學靈感"
+                    >
+                        <LucideIcon name="SparklesIcon" className="w-6 h-6" />
+                    </button>
+
+                    {isOpen && (
+                        <div className="fixed bottom-24 right-6 md:right-24 z-50 w-[90vw] md:w-[400px] h-[500px] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-gray-100 dark:border-slate-800 animate-scale-in">
+                            <div className="bg-gradient-to-r from-violet-600 to-indigo-600 p-4 flex justify-between items-center text-white">
+                                <div className="flex items-center gap-2">
+                                    <LucideIcon name="Lightbulb" className="w-5 h-5 text-yellow-300" />
+                                    <h3 className="font-bold">✨ AI 教學靈感助手</h3>
+                                </div>
+                                <button onClick={toggleChat} className="hover:bg-white/20 p-1 rounded-full transition-colors">
+                                    <LucideIcon name="X" className="w-5 h-5" />
+                                </button>
+                            </div>
+
+                            <div className="flex-1 p-4 overflow-y-auto bg-slate-50 dark:bg-slate-950/50">
+                                {response ? (
+                                    <div className="prose prose-sm max-w-none text-slate-700 dark:text-slate-300 ai-response whitespace-pre-wrap">
+                                        {response}
+                                    </div>
+                                ) : (
+                                    <div className="h-full flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 text-center space-y-3">
+                                        <div className="bg-indigo-50 dark:bg-slate-800 p-4 rounded-full">
+                                            <LucideIcon name="Bot" className="w-10 h-10 text-indigo-300 dark:text-cyan-400" />
+                                        </div>
+                                        <p>輸入您想教的主題（例如：浮力、英文過去式）<br/>我來為您推薦工具與活動靈感！</p>
+                                    </div>
+                                )}
+                                {loading && (
+                                    <div className="flex justify-center items-center py-4 space-x-2">
+                                        <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce"></div>
+                                        <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce delay-75"></div>
+                                        <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce delay-150"></div>
+                                    </div>
+                                )}
+                                <div ref={chatEndRef}></div>
+                            </div>
+
+                            <div className="p-3 bg-white dark:bg-slate-900 border-t border-gray-100 dark:border-slate-800">
+                                <div className="relative">
+                                    <input 
+                                        type="text" 
+                                        value={query}
+                                        onChange={(e) => setQuery(e.target.value)}
+                                        onKeyPress={(e) => e.key === 'Enter' && generateResponse()}
+                                        placeholder="輸入教學主題..."
+                                        className="w-full pl-4 pr-12 py-3 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-cyan-500 focus:bg-white dark:focus:bg-slate-900 transition-all text-sm dark:text-slate-200 dark:placeholder-slate-500"
+                                    />
+                                    <button 
+                                        onClick={generateResponse}
+                                        disabled={loading || !query.trim()}
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-indigo-600 dark:bg-cyan-600 text-white rounded-lg hover:bg-indigo-700 dark:hover:bg-cyan-500 disabled:opacity-50 transition-colors"
+                                    >
+                                        <LucideIcon name="Send" className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </>
+            );
+        };
+
         // --- Components ---
 
         const BackButton = () => (
-            <a href="/" className="fixed top-4 left-4 z-50 flex items-center gap-2 px-4 py-2 bg-white/90 backdrop-blur-md border border-gray-200 shadow-sm rounded-full text-sm font-semibold text-gray-700 hover:bg-gray-100 hover:text-primary transition-colors duration-200 group">
+            <a href="/" className="fixed top-4 left-4 z-50 flex items-center gap-2 px-4 py-2 bg-white/90 dark:bg-slate-900/80 backdrop-blur-md border border-gray-200 dark:border-cyan-500/30 shadow-sm rounded-full text-sm font-semibold text-gray-700 dark:text-cyan-300 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-primary dark:hover:text-cyan-100 transition-colors duration-200 group">
                 <LucideIcon name="ArrowLeft" className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
                 <span>返回主頁</span>
             </a>
         );
+
+        const ThemeToggle = ({ isCyber, toggle }) => (
+            <button 
+                onClick={toggle}
+                className={`fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold backdrop-blur-md transition-all duration-300 border
+                    ${isCyber 
+                        ? 'bg-slate-900/80 border-cyan-500 text-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.3)] hover:bg-slate-800' 
+                        : 'bg-white/90 border-gray-200 text-gray-700 hover:bg-gray-100 shadow-sm'}`}
+            >
+                <LucideIcon name={isCyber ? "Eye" : "Moon"} className="w-4 h-4" />
+                <span>{isCyber ? "關閉夜視" : "夜視模式"}</span>
+            </button>
+        );
+
+        const ScrollToTopButton = () => {
+            const [isVisible, setIsVisible] = useState(false);
+
+            useEffect(() => {
+                const toggleVisibility = () => {
+                    if (window.pageYOffset > 300) {
+                        setIsVisible(true);
+                    } else {
+                        setIsVisible(false);
+                    }
+                };
+
+                window.addEventListener("scroll", toggleVisibility);
+                return () => window.removeEventListener("scroll", toggleVisibility);
+            }, []);
+
+            const scrollToTop = () => {
+                window.scrollTo({
+                    top: 0,
+                    behavior: "smooth"
+                });
+            };
+
+            if (!isVisible) return null;
+
+            return (
+                <button 
+                    onClick={scrollToTop}
+                    className="fixed bottom-24 right-6 z-40 p-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-gray-200 dark:border-cyan-500/50 rounded-full shadow-lg text-gray-600 dark:text-cyan-400 hover:bg-primary dark:hover:bg-cyan-600 hover:text-white dark:hover:text-slate-950 transition-all duration-300 animate-fade-in group"
+                    aria-label="回到頂部"
+                    title="回到頂部"
+                >
+                    <LucideIcon name="ArrowUp" className="w-5 h-5 group-hover:-translate-y-1 transition-transform" />
+                </button>
+            );
+        };
 
         const FloatingBadge = () => (
             <a 
@@ -265,8 +502,8 @@
                 <div className="absolute -inset-[2px] bg-gradient-to-r from-pink-500 via-purple-500 via-cyan-500 via-green-500 to-yellow-500 rounded-full blur-sm opacity-60 group-hover:opacity-100 transition duration-500 animate-gradient-x"></div>
                 
                 {/* Glassmorphism Inner Button */}
-                <div className="relative flex items-center gap-3 px-4 py-2.5 bg-white/40 backdrop-blur-xl rounded-full border border-white/40 shadow-[0_8px_32px_0_rgba(31,38,135,0.15)] hover:scale-105 transition-transform duration-300">
-                    <div className="w-8 h-8 rounded-full overflow-hidden border border-white/50 bg-white/20 flex items-center justify-center relative">
+                <div className="relative flex items-center gap-3 px-4 py-2.5 bg-white/40 dark:bg-slate-900/60 backdrop-blur-xl rounded-full border border-white/40 dark:border-cyan-500/30 shadow-[0_8px_32px_0_rgba(31,38,135,0.15)] hover:scale-105 transition-transform duration-300">
+                    <div className="w-8 h-8 rounded-full overflow-hidden border border-white/50 dark:border-cyan-400/50 bg-white/20 flex items-center justify-center relative">
                         <img 
                             src="https://i.imgur.com/OQwyeIV.png" 
                             alt="Ken Cheng"
@@ -274,7 +511,7 @@
                             onError={(e) => {
                                 e.target.onerror = null;
                                 e.target.style.display = 'none';
-                                e.target.parentElement.innerHTML = '<i data-lucide="monitor" class="w-4 h-4 text-indigo-800"></i>';
+                                e.target.parentElement.innerHTML = '<i data-lucide="monitor" class="w-4 h-4 text-indigo-800 dark:text-cyan-400"></i>';
                                 lucide.createIcons();
                             }}
                         />
@@ -289,28 +526,28 @@
                 onClick={onClick}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0
                     ${active 
-                        ? 'bg-primary text-white shadow-md shadow-indigo-500/20 transform scale-105' 
-                        : 'bg-white text-muted hover:bg-gray-100 hover:text-text border border-gray-100'}`}
+                        ? 'bg-primary dark:bg-cyan-600 text-white shadow-md shadow-indigo-500/20 dark:shadow-cyan-500/40 transform scale-105' 
+                        : 'bg-white dark:bg-slate-800 text-muted dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-text dark:hover:text-cyan-200 border border-gray-100 dark:border-slate-700'}`}
             >
                 {label}
             </button>
         );
 
         const ToolCard = ({ tool, onShowQR }) => (
-            <div className="group relative bg-white rounded-xl border border-gray-100 p-5 flex flex-col h-full card-hover overflow-hidden">
-                <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-indigo-50 to-transparent rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div className="group relative bg-white dark:bg-slate-900/80 rounded-xl border border-gray-100 dark:border-slate-800 p-5 flex flex-col h-full card-hover overflow-hidden backdrop-blur-sm">
+                <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-indigo-50 to-transparent dark:from-cyan-900/30 rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 
                 <div className="flex justify-between items-start mb-4 relative z-10">
-                    <div className="p-3 bg-gray-50 rounded-lg text-primary group-hover:bg-primary group-hover:text-white transition-colors duration-300 shadow-sm">
+                    <div className="p-3 bg-gray-50 dark:bg-slate-800 rounded-lg text-primary dark:text-cyan-400 group-hover:bg-primary group-hover:text-white dark:group-hover:bg-cyan-500 dark:group-hover:text-slate-950 transition-colors duration-300 shadow-sm">
                         <LucideIcon name={tool.icon} className="w-6 h-6" />
                     </div>
                 </div>
                 
-                <h3 className="text-lg font-bold text-text mb-2 group-hover:text-primary transition-colors relative z-10">
+                <h3 className="text-lg font-bold text-text dark:text-cyan-50 mb-2 group-hover:text-primary dark:group-hover:text-cyan-400 transition-colors relative z-10">
                     {tool.name}
                 </h3>
                 
-                <p className="text-sm text-muted mb-6 flex-grow leading-relaxed relative z-10">
+                <p className="text-sm text-muted dark:text-slate-400 mb-6 flex-grow leading-relaxed relative z-10">
                     {tool.desc}
                 </p>
                 
@@ -319,7 +556,7 @@
                         href={tool.url} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className={`flex-grow flex items-center justify-center py-2.5 bg-gray-50 text-text text-sm font-medium rounded-lg border border-gray-200 hover:bg-black hover:text-white hover:border-black transition-all duration-300 gap-2 ${tool.url === '#' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        className={`flex-grow flex items-center justify-center py-2.5 bg-gray-50 dark:bg-slate-800 text-text dark:text-slate-200 text-sm font-medium rounded-lg border border-gray-200 dark:border-slate-700 hover:bg-black hover:text-white hover:border-black dark:hover:bg-cyan-600 dark:hover:text-white dark:hover:border-cyan-500 transition-all duration-300 gap-2 ${tool.url === '#' ? 'opacity-50 cursor-not-allowed' : ''}`}
                         onClick={(e) => tool.url === '#' && e.preventDefault()}
                     >
                         {tool.url === '#' ? '即將推出' : '立即訪問'} <LucideIcon name="ExternalLink" className="w-4 h-4" />
@@ -327,7 +564,7 @@
                     {tool.url !== '#' && (
                         <button 
                             onClick={() => onShowQR(tool.url, tool.name)}
-                            className="flex items-center justify-center w-[46px] bg-gray-50 text-gray-600 rounded-lg border border-gray-200 hover:bg-indigo-100 hover:text-primary hover:border-indigo-200 transition-all duration-300"
+                            className="flex items-center justify-center w-[46px] bg-gray-50 dark:bg-slate-800 text-gray-600 dark:text-slate-400 rounded-lg border border-gray-200 dark:border-slate-700 hover:bg-indigo-100 hover:text-primary hover:border-indigo-200 dark:hover:bg-cyan-900/30 dark:hover:text-cyan-400 dark:hover:border-cyan-500/50 transition-all duration-300"
                             title="生成 QR Code"
                         >
                             <LucideIcon name="QrCode" className="w-5 h-5" />
@@ -343,7 +580,6 @@
 
             useEffect(() => {
                 if (url) {
-                    // Generate QR Code data URL
                     QRCode.toDataURL(url, {
                         width: 300,
                         margin: 2,
@@ -359,27 +595,27 @@
 
             return (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in" onClick={onClose}>
-                    <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 relative animate-scale-in" onClick={e => e.stopPropagation()}>
+                    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-sm w-full p-6 relative animate-scale-in border dark:border-cyan-500/30" onClick={e => e.stopPropagation()}>
                         <button 
                             onClick={onClose} 
-                            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1 rounded-full transition-colors"
+                            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-cyan-400 hover:bg-gray-100 dark:hover:bg-slate-800 p-1 rounded-full transition-colors"
                         >
                             <LucideIcon name="X" className="w-5 h-5" />
                         </button>
                         
                         <div className="text-center mb-6">
-                            <h3 className="text-xl font-bold text-gray-800 mb-2">{title}</h3>
-                            <p className="text-sm text-gray-500 break-all px-2">{url}</p>
+                            <h3 className="text-xl font-bold text-gray-800 dark:text-cyan-50 mb-2">{title}</h3>
+                            <p className="text-sm text-gray-500 dark:text-slate-400 break-all px-2">{url}</p>
                         </div>
 
                         <div className="flex justify-center mb-6">
                             {imgSrc ? (
-                                <div className="p-3 border border-gray-100 rounded-xl shadow-sm bg-white">
+                                <div className="p-3 border border-gray-100 dark:border-slate-700 rounded-xl shadow-sm bg-white">
                                     <img src={imgSrc} alt={`QR Code for ${title}`} className="w-48 h-48 md:w-56 md:h-56" />
                                 </div>
                             ) : (
-                                <div className="w-48 h-48 flex items-center justify-center bg-gray-50 rounded-xl">
-                                    <span className="text-gray-400 text-sm">生成中...</span>
+                                <div className="w-48 h-48 flex items-center justify-center bg-gray-50 dark:bg-slate-800 rounded-xl">
+                                    <span className="text-gray-400 dark:text-slate-500 text-sm">生成中...</span>
                                 </div>
                             )}
                         </div>
@@ -388,7 +624,7 @@
                             <a 
                                 href={imgSrc} 
                                 download={`${title}-qrcode.png`}
-                                className={`flex-1 flex items-center justify-center gap-2 py-3 bg-primary text-white font-medium rounded-xl shadow-lg shadow-indigo-500/30 hover:bg-indigo-700 transition-all ${!imgSrc ? 'opacity-50 pointer-events-none' : ''}`}
+                                className={`flex-1 flex items-center justify-center gap-2 py-3 bg-primary dark:bg-cyan-600 text-white font-medium rounded-xl shadow-lg shadow-indigo-500/30 dark:shadow-cyan-500/30 hover:bg-indigo-700 dark:hover:bg-cyan-500 transition-all ${!imgSrc ? 'opacity-50 pointer-events-none' : ''}`}
                             >
                                 <LucideIcon name="Download" className="w-4 h-4" />
                                 下載 PNG
@@ -402,9 +638,20 @@
         const MainApp = () => {
             const [searchQuery, setSearchQuery] = useState("");
             const [activeCategory, setActiveCategory] = useState("All");
+            const [isCyberMode, setIsCyberMode] = useState(false);
             
             // State for QR Code Modal
             const [qrModalData, setQrModalData] = useState(null);
+
+            // Toggle Dark Mode
+            const toggleCyberMode = () => {
+                setIsCyberMode(!isCyberMode);
+                if (!isCyberMode) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            };
 
             const handleShowQR = (url, name) => {
                 setQrModalData({ url, name });
@@ -412,7 +659,7 @@
 
             const categories = useMemo(() => {
                 const allCats = [...new Set(rawData.map(item => item.category))].sort();
-                const priority = ["Ken Cheng製作的TDA", "常用校本電子平台/工具", "教育學習", "AI 助手", "設計與圖像", "影片與動畫", "音樂與音訊", "簡報製作", "開發工具 Vibe coding", "科學與 3D", "遊戲娛樂", "實用工具"];
+                const priority = ["Ken Cheng製作的TDA", "常用校本電子平台/工具", "教育學習", "AI 助手", "設計、圖像與流程圖", "影片與動畫", "音樂與音訊", "簡報製作", "開發工具 Vibe coding", "科學與 3D", "遊戲娛樂", "實用工具"];
                 const sortedCats = allCats.sort((a, b) => {
                     const idxA = priority.indexOf(a);
                     const idxB = priority.indexOf(b);
@@ -445,31 +692,34 @@
             }, [displayedCategories, searchQuery]);
 
             return (
-                <div className="min-h-screen bg-gray-50/50 pb-20 selection:bg-indigo-100 selection:text-primary">
+                <div className={`min-h-screen pb-20 selection:bg-indigo-100 selection:text-primary dark:selection:bg-cyan-900 dark:selection:text-cyan-200 transition-colors duration-500 ${isCyberMode ? 'bg-slate-950 cyber-grid' : 'bg-gray-50/50'}`}>
                     <BackButton />
+                    <ThemeToggle isCyber={isCyberMode} toggle={toggleCyberMode} />
                     
                     {/* Hero Header Section */}
-                    <header className="relative bg-white border-b border-gray-200 pt-24 pb-12 px-6 overflow-hidden">
+                    <header className={`relative pt-24 pb-12 px-6 overflow-hidden border-b transition-colors duration-500 ${isCyberMode ? 'bg-slate-950/80 border-slate-800' : 'bg-white border-gray-200'}`}>
+                        {/* Decorative background elements */}
                         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-7xl pointer-events-none overflow-hidden">
-                            <div className="absolute top-10 right-10 w-64 h-64 bg-indigo-50 rounded-full blur-3xl opacity-60"></div>
-                            <div className="absolute bottom-10 left-10 w-48 h-48 bg-rose-50 rounded-full blur-3xl opacity-60"></div>
+                            <div className={`absolute top-10 right-10 w-64 h-64 rounded-full blur-3xl opacity-60 transition-colors duration-500 ${isCyberMode ? 'bg-cyan-900/40' : 'bg-indigo-50'}`}></div>
+                            <div className={`absolute bottom-10 left-10 w-48 h-48 rounded-full blur-3xl opacity-60 transition-colors duration-500 ${isCyberMode ? 'bg-fuchsia-900/40' : 'bg-rose-50'}`}></div>
                         </div>
 
                         <div className="relative max-w-7xl mx-auto text-center z-10">
                             <div className="flex items-center justify-center gap-4 mb-6">
-                                <img src="https://i.imgur.com/OQwyeIV.png" alt="Logo" className="w-12 h-12 md:w-16 md:h-16 object-contain rounded-full shadow-md" />
-                                <h1 className="text-4xl md:text-6xl font-extrabold text-text tracking-tight">
-                                    教學設計輔助工具 <span className="text-primary">(TDA)</span>
+                                <img src="https://i.imgur.com/OQwyeIV.png" alt="Logo" className={`w-12 h-12 md:w-16 md:h-16 object-contain rounded-full shadow-md transition-shadow duration-500 ${isCyberMode ? 'shadow-cyan-500/50' : ''}`} />
+                                <h1 className={`text-4xl md:text-6xl font-extrabold tracking-tight transition-colors duration-500 ${isCyberMode ? 'text-white drop-shadow-[0_0_10px_rgba(34,211,238,0.5)]' : 'text-text'}`}>
+                                    Ken Cheng的 教學設計輔助工具 <span className={`transition-colors duration-500 ${isCyberMode ? 'text-cyan-400' : 'text-primary'}`}>(TDA)</span>
                                 </h1>
                             </div>
 
-                            <p className="text-lg text-muted max-w-2xl mx-auto mb-10 leading-relaxed">
+                            <p className={`text-lg max-w-2xl mx-auto mb-10 leading-relaxed transition-colors duration-500 ${isCyberMode ? 'text-slate-400' : 'text-muted'}`}>
                                 匯集教學輔助、AI 應用、開發工具與模擬體驗的個人導航站。<br/>
                                 旨在提升教學效率、激發創意靈感。
                             </p>
 
+                            {/* Enhanced Search Bar */}
                             <div className="relative max-w-xl mx-auto group">
-                                <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-rose-500 rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+                                <div className={`absolute -inset-1 bg-gradient-to-r rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200 ${isCyberMode ? 'from-cyan-500 to-fuchsia-500' : 'from-indigo-500 to-rose-500'}`}></div>
                                 <div className="relative">
                                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400">
                                         <LucideIcon name="Search" className="w-5 h-5" />
@@ -479,7 +729,7 @@
                                         placeholder="搜尋工具名稱、關鍵字或描述..."
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="block w-full pl-12 pr-4 py-4 border-0 rounded-xl leading-5 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary shadow-lg"
+                                        className={`block w-full pl-12 pr-4 py-4 border-0 rounded-xl leading-5 shadow-lg focus:outline-none focus:ring-2 transition-all duration-300 ${isCyberMode ? 'bg-slate-900 text-cyan-50 placeholder-slate-500 focus:ring-cyan-500' : 'bg-white text-gray-900 placeholder-gray-400 focus:ring-primary'}`}
                                     />
                                 </div>
                             </div>
@@ -487,7 +737,8 @@
                     </header>
 
                     <main className="max-w-7xl mx-auto px-6 mt-10">
-                        <div className="sticky top-0 z-40 bg-gray-50/95 backdrop-blur-sm py-4 -mx-6 px-6 md:static md:bg-transparent md:p-0 mb-12 border-b border-gray-200 md:border-0">
+                        {/* Categories Tabs */}
+                        <div className={`sticky top-0 z-40 backdrop-blur-sm py-4 -mx-6 px-6 md:static md:bg-transparent md:p-0 mb-12 border-b md:border-0 transition-colors duration-500 ${isCyberMode ? 'bg-slate-950/90 border-slate-800' : 'bg-gray-50/95 border-gray-200'}`}>
                             <div className="flex overflow-x-auto gap-2 no-scrollbar md:flex-wrap md:justify-center pb-2 md:pb-0">
                                 {categories.map(cat => (
                                     <CategoryBadge 
@@ -500,6 +751,7 @@
                             </div>
                         </div>
 
+                        {/* Results Sections Grouped by Category */}
                         <div className="min-h-[400px] space-y-16">
                             {hasAnyResults ? (
                                 displayedCategories.map((category, index) => {
@@ -519,9 +771,9 @@
 
                                          return (
                                             <section key={category} className="animate-fade-in space-y-8">
-                                                <div className="flex items-center gap-3 border-l-4 border-primary pl-4">
-                                                    <h2 className="text-2xl font-bold text-gray-800 tracking-tight">{category}</h2>
-                                                    <span className="bg-gray-100 text-gray-600 text-xs font-semibold px-2.5 py-0.5 rounded-full">{tools.length}</span>
+                                                <div className={`flex items-center gap-3 border-l-4 pl-4 transition-colors duration-500 ${isCyberMode ? 'border-cyan-500' : 'border-primary'}`}>
+                                                    <h2 className={`text-2xl font-bold tracking-tight transition-colors duration-500 ${isCyberMode ? 'text-cyan-50' : 'text-gray-800'}`}>{category}</h2>
+                                                    <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full transition-colors duration-500 ${isCyberMode ? 'bg-slate-800 text-cyan-400' : 'bg-gray-100 text-gray-600'}`}>{tools.length}</span>
                                                 </div>
                                                 <div className="pl-0 md:pl-4 space-y-8">
                                                     {subCatOrder.map(subCat => {
@@ -536,8 +788,8 @@
 
                                                         return (
                                                             <div key={subCat} className="space-y-4">
-                                                                <h3 className="text-lg font-semibold text-gray-600 flex items-center gap-2 border-b border-gray-100 pb-2">
-                                                                    <LucideIcon name={SubIcon} className="w-5 h-5 text-indigo-500" />
+                                                                <h3 className={`text-lg font-semibold flex items-center gap-2 border-b pb-2 transition-colors duration-500 ${isCyberMode ? 'text-slate-300 border-slate-800' : 'text-gray-600 border-gray-100'}`}>
+                                                                    <LucideIcon name={SubIcon} className={`w-5 h-5 transition-colors duration-500 ${isCyberMode ? 'text-fuchsia-400' : 'text-indigo-500'}`} />
                                                                     {subCat}
                                                                 </h3>
                                                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -563,10 +815,10 @@
                                                 <div className="py-12 animate-fade-in">
                                                     <div className="relative flex items-center justify-center">
                                                         <div className="absolute inset-0 flex items-center" aria-hidden="true">
-                                                            <div className="w-full border-t-2 border-dashed border-gray-300"></div>
+                                                            <div className={`w-full border-t-2 border-dashed transition-colors duration-500 ${isCyberMode ? 'border-slate-800' : 'border-gray-300'}`}></div>
                                                         </div>
                                                         <div className="relative flex justify-center">
-                                                            <span className="bg-gray-50 px-6 py-2 text-xl font-bold text-gray-500 tracking-wider border-2 border-dashed border-gray-300 rounded-full uppercase shadow-sm">
+                                                            <span className={`px-6 py-2 text-xl font-bold tracking-wider border-2 border-dashed rounded-full uppercase shadow-sm transition-colors duration-500 ${isCyberMode ? 'bg-slate-950 text-slate-500 border-slate-800' : 'bg-gray-50 text-gray-500 border-gray-300'}`}>
                                                                 其他/外部教學設計輔助工具
                                                             </span>
                                                         </div>
@@ -576,9 +828,9 @@
 
                                             {tools.length > 0 && (
                                                 <section className="animate-fade-in">
-                                                    <div className="flex items-center gap-3 mb-6 border-l-4 border-primary pl-4">
-                                                        <h2 className="text-2xl font-bold text-gray-800 tracking-tight">{category}</h2>
-                                                        <span className="bg-gray-100 text-gray-600 text-xs font-semibold px-2.5 py-0.5 rounded-full">{tools.length}</span>
+                                                    <div className={`flex items-center gap-3 mb-6 border-l-4 pl-4 transition-colors duration-500 ${isCyberMode ? 'border-cyan-500' : 'border-primary'}`}>
+                                                        <h2 className={`text-2xl font-bold tracking-tight transition-colors duration-500 ${isCyberMode ? 'text-cyan-50' : 'text-gray-800'}`}>{category}</h2>
+                                                        <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full transition-colors duration-500 ${isCyberMode ? 'bg-slate-800 text-cyan-400' : 'bg-gray-100 text-gray-600'}`}>{tools.length}</span>
                                                     </div>
                                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                                                         {tools.map((tool, idx) => (
@@ -592,14 +844,14 @@
                                 })
                             ) : (
                                 <div className="flex flex-col items-center justify-center py-20 text-center animate-pulse">
-                                    <div className="bg-white p-6 rounded-full shadow-sm mb-4">
-                                        <LucideIcon name="Search" className="w-10 h-10 text-gray-300" />
+                                    <div className={`p-6 rounded-full shadow-sm mb-4 transition-colors duration-500 ${isCyberMode ? 'bg-slate-900' : 'bg-white'}`}>
+                                        <LucideIcon name="Search" className={`w-10 h-10 transition-colors duration-500 ${isCyberMode ? 'text-slate-700' : 'text-gray-300'}`} />
                                     </div>
-                                    <h3 className="text-xl font-bold text-text mb-2">找不到相關工具</h3>
-                                    <p className="text-muted">請嘗試調整搜尋關鍵字或切換分類。</p>
+                                    <h3 className={`text-xl font-bold mb-2 transition-colors duration-500 ${isCyberMode ? 'text-cyan-50' : 'text-text'}`}>找不到相關工具</h3>
+                                    <p className={`transition-colors duration-500 ${isCyberMode ? 'text-slate-400' : 'text-muted'}`}>請嘗試調整搜尋關鍵字或切換分類。</p>
                                     <button 
                                         onClick={() => {setSearchQuery(""); setActiveCategory("All")}}
-                                        className="mt-6 text-primary font-semibold hover:underline"
+                                        className={`mt-6 font-semibold hover:underline transition-colors duration-500 ${isCyberMode ? 'text-cyan-400' : 'text-primary'}`}
                                     >
                                         清除所有篩選
                                     </button>
@@ -608,13 +860,14 @@
                         </div>
                     </main>
 
-                    <footer className="max-w-7xl mx-auto px-6 mt-20 text-center border-t border-gray-200 pt-12 pb-24">
-                        <p className="text-sm text-muted">
+                    <footer className={`max-w-7xl mx-auto px-6 mt-20 text-center border-t pt-12 pb-24 transition-colors duration-500 ${isCyberMode ? 'border-slate-800' : 'border-gray-200'}`}>
+                        <p className={`text-sm transition-colors duration-500 ${isCyberMode ? 'text-slate-500' : 'text-muted'}`}>
                             © 2025 Ken Cheng Created with Gemini Script & Tailwind CSS
                         </p>
                     </footer>
 
                     <FloatingBadge />
+                    <ScrollToTopButton />
                     
                     {/* Render Modal if active */}
                     {qrModalData && (
@@ -624,6 +877,8 @@
                             onClose={() => setQrModalData(null)} 
                         />
                     )}
+                    
+                    <AiAssistant />
                 </div>
             );
         };
