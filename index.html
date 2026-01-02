@@ -434,12 +434,24 @@
 
         // --- Components ---
 
-        const BackButton = () => (
-            <a href="/" className="fixed top-4 left-4 z-50 flex items-center gap-2 px-4 py-2 bg-white/90 dark:bg-slate-900/80 backdrop-blur-md border border-gray-200 dark:border-cyan-500/30 shadow-sm rounded-full text-sm font-semibold text-gray-700 dark:text-cyan-300 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-primary dark:hover:text-cyan-100 transition-colors duration-200 group">
-                <LucideIcon name="ArrowLeft" className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-                <span>返回主頁</span>
-            </a>
-        );
+        const BackButton = () => {
+            const scrollToTop = () => {
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+            };
+
+            return (
+                <button 
+                    onClick={scrollToTop} 
+                    className="fixed top-4 left-4 z-50 flex items-center gap-2 px-4 py-2 bg-white/90 dark:bg-slate-900/80 backdrop-blur-md border border-gray-200 dark:border-cyan-500/30 shadow-sm rounded-full text-sm font-semibold text-gray-700 dark:text-cyan-300 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-primary dark:hover:text-cyan-100 transition-colors duration-200 group"
+                >
+                    <LucideIcon name="ArrowUp" className="w-4 h-4 group-hover:-translate-y-1 transition-transform" />
+                    <span>返回頂部</span>
+                </button>
+            );
+        };
 
         const ThemeToggle = ({ isCyber, toggle }) => (
             <button 
