@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>教學設計輔助工具 (TDA) | Resource Dashboard</title>
+    
+    <!-- React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- QRCode Generator Library -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+
+    <!-- Tailwind Configuration -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#4f46e5', // Indigo 600
+                        secondary: '#e11d48', // Rose 600
+                        background: '#f8fafc', // Slate 50
+                        surface: '#ffffff',
+                        text: '#0f172a', // Slate 900
+                        muted: '#64748b', // Slate 500
+                    },
+                    fontFamily: {
+                        sans: ['"Noto Sans TC"', 'sans-serif'],
+                    },
+                    animation: {
+                        'gradient-x': 'gradient-x 3s ease infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                        'fade-in': 'fadeIn 0.5s ease-out forwards',
+                        'fade-in-up': 'fadeInUp 0.7s ease-out forwards',
+                        'scale-in': 'scaleIn 0.2s ease-out forwards',
+                    },
+                    keyframes: {
+                        'gradient-x': {
+                            '0%, 100%': { 'background-size': '200% 200%', 'background-position': 'left center' },
+                            '50%': { 'background-size': '200% 200%', 'background-position': 'right center' },
+                        },
+                        'float': {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        },
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        fadeInUp: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        scaleIn: {
+                            '0%': { opacity: '0', transform: 'scale(0.9)' },
+                            '100%': { opacity: '1', transform: 'scale(1)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        .card-hover { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .card-hover:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.1), 0 4px 6px -2px rgba(79, 70, 229, 0.05);
+            border-color: #c7d2fe;
+        }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .holo-text {
+            background: linear-gradient(to right, #ec4899, #8b5cf6, #3b82f6, #06b6d4, #10b981, #ec4899);
+            background-size: 200% auto;
+            color: transparent;
+            -webkit-background-clip: text;
+            background-clip: text;
+            animation: gradient-x 3s linear infinite;
+        }
+    </style>
+</head>
+<body class="bg-background text-text antialiased">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+
+        // --- Data Structure ---
+        const rawData = [
+            // --- Ken Cheng's Tools (Priority 1) ---
+            { name: "TDA Builder", url: "https://chengky-bot.github.io/TDA-Prompt-Builder/", desc: "TDA 提示詞構建器，輔助生成精準的教學指令。", category: "Ken Cheng製作的TDA", subcategory: "教學TDA", icon: "Wrench" },
+            { name: "合作學習分組", url: "https://chengky-bot.github.io/Collaborative-Learning-Grouping-Tool/", desc: "協助教師進行學生分組與合作學習管理的實用工具。", category: "Ken Cheng製作的TDA", subcategory: "教學TDA", icon: "Users" },
+            { name: "四素句寫作", url: "https://chat.qwen.ai/s/deploy/t_51b2aac5-2727-4c20-81c2-85201717ac69", desc: "基於 Qwen 的寫作輔助，練習時間、地點、人物、事件的造句結構。", category: "Ken Cheng製作的TDA", subcategory: "教學TDA", icon: "PenLine" },
+            { name: "朗讀文章工具", url: "https://chat.qwen.ai/s/deploy/t_35a735bb-7e27-421a-b9f3-1a4910b71ca1", desc: "AI 語音朗讀文章，輔助閱讀障礙或語言聽力訓練。", category: "Ken Cheng製作的TDA", subcategory: "教學TDA", icon: "Volume2" },
+            { name: "課堂情緒溫度計", url: "https://v0-classroom-mood-thermometer.vercel.app/", desc: "檢測課堂情緒氛圍的互動工具 (v0 生成)。", category: "Ken Cheng製作的TDA", subcategory: "教學TDA", icon: "Thermometer" },
+            { name: "打字練習工具", url: "https://app-8bfe8765.base44.app", desc: "簡潔的線上打字訓練，提升輸入速度與準確度。", category: "Ken Cheng製作的TDA", subcategory: "電腦", icon: "Keyboard" },
+            { name: "交通燈模擬器", url: "https://crossing-light.preview.emergentagent.com/", desc: "互動式交通號誌模擬，適合兒童交通安全教育。", category: "Ken Cheng製作的TDA", subcategory: "科學", icon: "Siren" },
+            { name: "早安天氣與早餐", url: "https://morning-meal-mate.lovable.app/", desc: "結合天氣資訊的早餐選擇助手，培養生活自理能力。", category: "Ken Cheng製作的TDA", subcategory: "科學", icon: "Sun" },
+            { name: "蒸發模擬工具", url: "https://chat.qwen.ai/s/deploy/t_873447cd-c24f-4839-978b-e0d1aa3beff9", desc: "基於 Qwen 的科學模擬工具，探索蒸發現象的原理。", category: "Ken Cheng製作的TDA", subcategory: "科學", icon: "Cloud" },
+            { name: "磁力遊戲", url: "https://poe.com/magnetic_game", desc: "探索磁鐵的特性與互動遊戲。", category: "Ken Cheng製作的TDA", subcategory: "科學", icon: "Magnet" },
+            { name: "物質溶解實驗", url: "https://v0-elementary-science-experiment.vercel.app/", desc: "觀察不同物質在水中的溶解現象。", category: "Ken Cheng製作的TDA", subcategory: "科學", icon: "Beaker" },
+            { name: "浮力模擬", url: "https://chat.qwen.ai/s/deploy/7eba41bb-8e71-4396-a333-bb9901d78cba", desc: "互動式浮力實驗，了解物體沈浮原理。", category: "Ken Cheng製作的TDA", subcategory: "科學", icon: "Ship" },
+            { name: "浮力遊戲 (POE)", url: "https://poe.com/floatgame", desc: "基於 POE 的浮力問答與互動遊戲。", category: "Ken Cheng製作的TDA", subcategory: "科學", icon: "Ship" },
+
+            // --- School Platforms (Priority 2) ---
+            { name: "GNS AI", url: "https://chat.ai.gns.hk/login", desc: "校本 AI 聊天平台，支援教學與學習互動。", category: "常用校本電子平台/工具", icon: "MessageCircle" },
+            { name: "AI 小助手 (AKS1,2)", url: "https://digitalhuman.kimiyi.ai/?id=wWLsAKCdVmH2ttWd14LzlTpENllhSUBf2sbxvIQ2hsIH8EngxQJlnUV5-NbXWk5yyF35RE38B7KwvphtQBgB9g2", desc: "數位人虛擬助教 (AKS1,2)，輔助課堂教學與學生引導。", category: "常用校本電子平台/工具", icon: "UserCheck" },
+            { name: "AI 小助手 (BKS1,2)", url: "https://digitalhuman.kimiyi.ai/?id=RfMNnVQ-sIemF1d9ea2oKsQ_C4dC4IXnvW4yK-0Dpd28kqJTNeKZMEGoZqDhverkD1Yu2HuCbF9tJq7K3eUuSQ2", desc: "數位人虛擬助教 (BKS1,2)，提供即時互動與學習支援。", category: "常用校本電子平台/工具", icon: "UserCheck" },
+            { name: "Wordwall", url: "https://wordwall.net/tc", desc: "簡單易用的教學遊戲製作平台，快速建立課堂互動活動。", category: "常用校本電子平台/工具", icon: "Gamepad2" },
+            { name: "Delightex", url: "https://edu.delightex.com/Auth", desc: "VR/AR 內容創作與教學平台，啟發學生創造力。", category: "常用校本電子平台/工具", icon: "Glasses" },
+
+            // --- Dev Tools Vibe coding ---
+            { name: "Cursor", url: "https://cursor.com/zh-Hant", desc: "內建強大 AI 的新一代程式編輯器。", category: "開發工具 Vibe coding", icon: "Terminal" },
+            { name: "Lovable", url: "https://lovable.dev/", desc: "自然語言建構 Web 應用，即時生成代碼。", category: "開發工具 Vibe coding", icon: "Code2" },
+            { name: "Bolt", url: "https://bolt.new/", desc: "對話生成完整全端應用，支援即時預覽。", category: "開發工具 Vibe coding", icon: "Cpu" },
+            { name: "v0", url: "https://v0.app/", desc: "Vercel 出品，文字生成 React UI 元件。", category: "開發工具 Vibe coding", icon: "Layout" },
+            { name: "Replit", url: "https://replit.com/", desc: "瀏覽器即時協作開發環境，內建 AI。", category: "開發工具 Vibe coding", icon: "Cloud" },
+            { name: "Napkin AI", url: "https://www.napkin.ai/", desc: "將代碼轉換為清晰圖解與流程圖。", category: "開發工具 Vibe coding", icon: "Share2" },
+            { name: "Base44", url: "https://base44.com/", desc: "AI 輔助產品設計與品牌建構平台。", category: "開發工具 Vibe coding", icon: "Layers" },
+
+            // --- External Tools ---
+            { name: "Doubao (豆包)", url: "https://www.doubao.com/chat/", desc: "字節跳動多模態 AI，支援圖像生成與影片創作。", category: "AI 助手", icon: "Bot" },
+            { name: "Qwen Chat", url: "https://chat.qwen.ai/", desc: "阿里巴巴通義千問，高品質圖像理解與影片分析。", category: "AI 助手", icon: "MessageSquare" },
+            { name: "Grok", url: "https://grok.com/", desc: "xAI 出品，即時資訊與高擬真影片生成。", category: "AI 助手", icon: "Zap" },
+            { name: "Gemini", url: "https://gemini.google.com/", desc: "Google 多模態助手，整合 Google 生態系。", category: "AI 助手", icon: "Sparkles" },
+            { name: "Kimi", url: "https://www.kimi.com/", desc: "超長上下文理解，擅長整理資料與簡報。", category: "AI 助手", icon: "FileText" },
+            { name: "Manus", url: "https://manus.im/", desc: "AI 工作流自動化，一鍵產出報告。", category: "AI 助手", icon: "Workflow" },
+            { name: "Recraft", url: "https://www.recraft.ai/", desc: "支援 SVG 輸出的專業設計 AI，品牌一致性高。", category: "設計與圖像", icon: "PenTool" },
+            { name: "Cleanup.pictures", url: "https://cleanup.pictures/", desc: "智慧移除照片中的人物或雜物。", category: "設計與圖像", icon: "Eraser" },
+            { name: "Lovart", url: "https://www.lovart.ai/", desc: "全流程自動化設計，從概念到 3D。", category: "設計與圖像", icon: "Palette" },
+            { name: "OpenNana", url: "https://opennana.com/awesome-prompt-gallery/", desc: "高品質 Midjourney/DALL·E 提示詞庫。", category: "設計與圖像", icon: "Library" },
+            { name: "Wan Video", url: "https://create.wan.video/", desc: "文字生成高品質短影片，支援語音合成。", category: "影片與動畫", icon: "Video" },
+            { name: "SkyReels", url: "https://www.skyreels.ai/", desc: "專注於社交媒體短影音生成的 AI。", category: "影片與動畫", icon: "Film" },
+            { name: "Descript", url: "https://www.descript.com/?redirect=false", desc: "像編輯文件一樣剪輯影片，支援 AI 語音。", category: "影片與動畫", icon: "Mic" },
+            { name: "AutoShorts", url: "https://autoshorts.ai/", desc: "全自動建立無人出鏡的 YouTube 頻道。", category: "影片與動畫", icon: "Youtube" },
+            { name: "Suno", url: "https://suno.com/", desc: "生成真人級人聲歌曲，支援自訂歌詞。", category: "音樂與音訊", icon: "Music" },
+            { name: "MusicMaker AI", url: "https://musicmaker.im/zh/ai-song-generator/", desc: "文字生成完整歌曲，適用於教育與遊戲。", category: "音樂與音訊", icon: "Headphones" },
+            { name: "X-Minus.pro", url: "https://x-minus.pro/", desc: "AI 音訊分離，去除人聲或樂器。", category: "音樂與音訊", icon: "Scissors" },
+            { name: "Gamma", url: "https://gamma.app/", desc: "輸入文字一鍵產出美觀簡報與網頁。", category: "簡報製作", icon: "Presentation" },
+            { name: "Felo", url: "https://felo.ai/zh-Hant/search", desc: "多語言 AI 搜尋與結構化簡報生成。", category: "簡報製作", icon: "Search" },
+            { name: "Prezi", url: "https://prezi.com/", desc: "動態視覺敘事簡報，突破傳統框架。", category: "簡報製作", icon: "MonitorPlay" },
+            { name: "Kiddo Worksheets", url: "https://www.kiddoworksheets.com/", desc: "免費可列印兒童學習工作紙。", category: "教育學習", icon: "BookOpen" },
+            { name: "Colorify AI", url: "https://colorifyai.art/", desc: "AI 生成著色頁，適合親子共創。", category: "教育學習", icon: "Brush" },
+            { name: "The Toymaker", url: "https://www.thetoymaker.com/", desc: "免費紙藝模型與摺紙資源。", category: "教育學習", icon: "Paperclip" },
+            { name: "PhET Interactive Simulations", url: "https://phet.colorado.edu/", desc: "科羅拉多大學開發的免費互動數理模擬教學資源。", category: "科學與 3D", icon: "Atom" },
+            { name: "BioRender", url: "https://www.biorender.com/", desc: "專業科學圖示製作平台，生命科學首選。", category: "科學與 3D", icon: "Beaker" },
+            { name: "Animagraffs", url: "https://animagraffs.com/", desc: "剖面圖解機械與生物運作原理。", category: "科學與 3D", icon: "Settings" },
+            { name: "Intangible Studio", url: "https://studio.intangible.ai/", desc: "文字生成 3D 模型與場景。", category: "科學與 3D", icon: "Box" },
+            { name: "GeoFS", url: "https://www.geo-fs.com/", desc: "基於瀏覽器的全球飛行模擬器。", category: "遊戲娛樂", icon: "Plane" },
+            { name: "3D Aim Trainer", url: "https://www.3daimtrainer.com/", desc: "專業 FPS 瞄準訓練與數據分析。", category: "遊戲娛樂", icon: "Crosshair" },
+            { name: "Jigidi", url: "https://www.jigidi.com/", desc: "線上拼圖社群，支援個人化製作。", category: "遊戲娛樂", icon: "Puzzle" },
+            { name: "Toolify AI", url: "https://www.toolify.ai/", desc: "收錄超過 26,000 個 AI 工具的目錄。", category: "實用工具", icon: "Database" },
+            { name: "Uiverse", url: "https://uiverse.io/", desc: "最大的開源 UI 元件庫 (CSS/Tailwind)。", category: "實用工具", icon: "Component" },
+            { name: "iLovePDF", url: "https://www.ilovepdf.com/zh-tw", desc: "PDF 全能工具箱：合併、壓縮、轉檔。", category: "實用工具", icon: "File" },
+        ];
+
+        // --- Icons Mapping ---
+        const IconMap = {
+            Bot: <i data-lucide="bot"></i>,
+            MessageSquare: <i data-lucide="message-square"></i>,
+            Zap: <i data-lucide="zap"></i>,
+            Sparkles: <i data-lucide="sparkles"></i>,
+            FileText: <i data-lucide="file-text"></i>,
+            Workflow: <i data-lucide="workflow"></i>,
+            Code: <i data-lucide="code"></i>,
+            PenTool: <i data-lucide="pen-tool"></i>,
+            PenLine: <i data-lucide="pen-line"></i>,
+            Keyboard: <i data-lucide="keyboard"></i>,
+            Siren: <i data-lucide="siren"></i>,
+            Sun: <i data-lucide="sun"></i>,
+            Volume2: <i data-lucide="volume-2"></i>,
+            Thermometer: <i data-lucide="thermometer"></i>,
+            Users: <i data-lucide="users"></i>,
+            Wrench: <i data-lucide="wrench"></i>,
+            Eraser: <i data-lucide="eraser"></i>,
+            Palette: <i data-lucide="palette"></i>,
+            Library: <i data-lucide="library"></i>,
+            Video: <i data-lucide="video"></i>,
+            Film: <i data-lucide="film"></i>,
+            Mic: <i data-lucide="mic"></i>,
+            Youtube: <i data-lucide="youtube"></i>,
+            Monitor: <i data-lucide="monitor"></i>,
+            Music: <i data-lucide="music"></i>,
+            Headphones: <i data-lucide="headphones"></i>,
+            Scissors: <i data-lucide="scissors"></i>,
+            Presentation: <i data-lucide="presentation"></i>,
+            Search: <i data-lucide="search"></i>,
+            MonitorPlay: <i data-lucide="monitor-play"></i>,
+            Terminal: <i data-lucide="terminal"></i>,
+            Code2: <i data-lucide="code-2"></i>,
+            Cpu: <i data-lucide="cpu"></i>,
+            Layout: <i data-lucide="layout"></i>,
+            Cloud: <i data-lucide="cloud"></i>,
+            Share2: <i data-lucide="share-2"></i>,
+            BookOpen: <i data-lucide="book-open"></i>,
+            Brush: <i data-lucide="brush"></i>,
+            Paperclip: <i data-lucide="paperclip"></i>,
+            Beaker: <i data-lucide="beaker"></i>,
+            Settings: <i data-lucide="settings"></i>,
+            Box: <i data-lucide="box"></i>,
+            Plane: <i data-lucide="plane"></i>,
+            Crosshair: <i data-lucide="crosshair"></i>,
+            Puzzle: <i data-lucide="puzzle"></i>,
+            Database: <i data-lucide="database"></i>,
+            Component: <i data-lucide="component"></i>,
+            File: <i data-lucide="file"></i>,
+            Calculator: <i data-lucide="calculator"></i>,
+            Atom: <i data-lucide="atom"></i>,
+            MessageCircle: <i data-lucide="message-circle"></i>,
+            UserCheck: <i data-lucide="user-check"></i>,
+            QrCode: <i data-lucide="qr-code"></i>,
+            Download: <i data-lucide="download"></i>,
+            X: <i data-lucide="x"></i>,
+            Circle: <i data-lucide="circle"></i>,
+            Gamepad2: <i data-lucide="gamepad-2"></i>,
+            Glasses: <i data-lucide="glasses"></i>,
+            Layers: <i data-lucide="layers"></i>,
+            Magnet: <i data-lucide="magnet"></i>,
+            Ship: <i data-lucide="ship"></i>
+        };
+
+        const LucideIcon = ({ name, className }) => {
+            useEffect(() => {
+                lucide.createIcons();
+            }, [name]);
+            return <span className={className}>{IconMap[name] || <i data-lucide="link"></i>}</span>;
+        };
+
+        // --- Components ---
+
+        const BackButton = () => (
+            <a href="/" className="fixed top-4 left-4 z-50 flex items-center gap-2 px-4 py-2 bg-white/90 backdrop-blur-md border border-gray-200 shadow-sm rounded-full text-sm font-semibold text-gray-700 hover:bg-gray-100 hover:text-primary transition-colors duration-200 group">
+                <LucideIcon name="ArrowLeft" className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+                <span>返回主頁</span>
+            </a>
+        );
+
+        const FloatingBadge = () => (
+            <div className="fixed bottom-6 right-6 z-50 group cursor-pointer animate-float hover:animate-none">
+                <div className="absolute -inset-[2px] bg-gradient-to-r from-pink-500 via-purple-500 via-cyan-500 via-green-500 to-yellow-500 rounded-full blur-sm opacity-60 group-hover:opacity-100 transition duration-500 animate-gradient-x"></div>
+                <div className="relative flex items-center gap-3 px-4 py-2.5 bg-white/40 backdrop-blur-xl rounded-full border border-white/40 shadow-[0_8px_32px_0_rgba(31,38,135,0.15)] hover:scale-105 transition-transform duration-300">
+                    <div className="w-8 h-8 rounded-full overflow-hidden border border-white/50 bg-white/20 flex items-center justify-center relative">
+                        <img 
+                            src="https://i.imgur.com/OQwyeIV.png" 
+                            alt="Ken Cheng"
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                                e.target.onerror = null;
+                                e.target.style.display = 'none';
+                                e.target.parentElement.innerHTML = '<i data-lucide="monitor" class="w-4 h-4 text-indigo-800"></i>';
+                                lucide.createIcons();
+                            }}
+                        />
+                    </div>
+                    <span className="text-xs font-bold holo-text">Ken Cheng設計</span>
+                </div>
+            </div>
+        );
+
+        const CategoryBadge = ({ active, label, onClick }) => (
+            <button 
+                onClick={onClick}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0
+                    ${active 
+                        ? 'bg-primary text-white shadow-md shadow-indigo-500/20 transform scale-105' 
+                        : 'bg-white text-muted hover:bg-gray-100 hover:text-text border border-gray-100'}`}
+            >
+                {label}
+            </button>
+        );
+
+        const ToolCard = ({ tool, onShowQR }) => (
+            <div className="group relative bg-white rounded-xl border border-gray-100 p-5 flex flex-col h-full card-hover overflow-hidden">
+                <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-indigo-50 to-transparent rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                
+                <div className="flex justify-between items-start mb-4 relative z-10">
+                    <div className="p-3 bg-gray-50 rounded-lg text-primary group-hover:bg-primary group-hover:text-white transition-colors duration-300 shadow-sm">
+                        <LucideIcon name={tool.icon} className="w-6 h-6" />
+                    </div>
+                </div>
+                
+                <h3 className="text-lg font-bold text-text mb-2 group-hover:text-primary transition-colors relative z-10">
+                    {tool.name}
+                </h3>
+                
+                <p className="text-sm text-muted mb-6 flex-grow leading-relaxed relative z-10">
+                    {tool.desc}
+                </p>
+                
+                <div className="mt-auto flex gap-2 relative z-10">
+                    <a 
+                        href={tool.url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className={`flex-grow flex items-center justify-center py-2.5 bg-gray-50 text-text text-sm font-medium rounded-lg border border-gray-200 hover:bg-black hover:text-white hover:border-black transition-all duration-300 gap-2 ${tool.url === '#' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        onClick={(e) => tool.url === '#' && e.preventDefault()}
+                    >
+                        {tool.url === '#' ? '即將推出' : '立即訪問'} <LucideIcon name="ExternalLink" className="w-4 h-4" />
+                    </a>
+                    {tool.url !== '#' && (
+                        <button 
+                            onClick={() => onShowQR(tool.url, tool.name)}
+                            className="flex items-center justify-center w-[46px] bg-gray-50 text-gray-600 rounded-lg border border-gray-200 hover:bg-indigo-100 hover:text-primary hover:border-indigo-200 transition-all duration-300"
+                            title="生成 QR Code"
+                        >
+                            <LucideIcon name="QrCode" className="w-5 h-5" />
+                        </button>
+                    )}
+                </div>
+            </div>
+        );
+
+        // --- QR Code Modal Component ---
+        const QRCodeModal = ({ url, title, onClose }) => {
+            const [imgSrc, setImgSrc] = useState("");
+
+            useEffect(() => {
+                if (url) {
+                    // Generate QR Code data URL
+                    QRCode.toDataURL(url, {
+                        width: 300,
+                        margin: 2,
+                        color: {
+                            dark: '#0f172a',
+                            light: '#ffffff'
+                        }
+                    }, (err, dataUrl) => {
+                        if (!err) setImgSrc(dataUrl);
+                    });
+                }
+            }, [url]);
+
+            return (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in" onClick={onClose}>
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 relative animate-scale-in" onClick={e => e.stopPropagation()}>
+                        <button 
+                            onClick={onClose} 
+                            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1 rounded-full transition-colors"
+                        >
+                            <LucideIcon name="X" className="w-5 h-5" />
+                        </button>
+                        
+                        <div className="text-center mb-6">
+                            <h3 className="text-xl font-bold text-gray-800 mb-2">{title}</h3>
+                            <p className="text-sm text-gray-500 break-all px-2">{url}</p>
+                        </div>
+
+                        <div className="flex justify-center mb-6">
+                            {imgSrc ? (
+                                <div className="p-3 border border-gray-100 rounded-xl shadow-sm bg-white">
+                                    <img src={imgSrc} alt={`QR Code for ${title}`} className="w-48 h-48 md:w-56 md:h-56" />
+                                </div>
+                            ) : (
+                                <div className="w-48 h-48 flex items-center justify-center bg-gray-50 rounded-xl">
+                                    <span className="text-gray-400 text-sm">生成中...</span>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="flex gap-3">
+                            <a 
+                                href={imgSrc} 
+                                download={`${title}-qrcode.png`}
+                                className={`flex-1 flex items-center justify-center gap-2 py-3 bg-primary text-white font-medium rounded-xl shadow-lg shadow-indigo-500/30 hover:bg-indigo-700 transition-all ${!imgSrc ? 'opacity-50 pointer-events-none' : ''}`}
+                            >
+                                <LucideIcon name="Download" className="w-4 h-4" />
+                                下載 PNG
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const MainApp = () => {
+            const [searchQuery, setSearchQuery] = useState("");
+            const [activeCategory, setActiveCategory] = useState("All");
+            
+            // State for QR Code Modal
+            const [qrModalData, setQrModalData] = useState(null);
+
+            const handleShowQR = (url, name) => {
+                setQrModalData({ url, name });
+            };
+
+            const categories = useMemo(() => {
+                const allCats = [...new Set(rawData.map(item => item.category))].sort();
+                const priority = ["Ken Cheng製作的TDA", "常用校本電子平台/工具", "教育學習", "AI 助手", "設計與圖像", "影片與動畫", "音樂與音訊", "簡報製作", "開發工具 Vibe coding", "科學與 3D", "遊戲娛樂", "實用工具"];
+                const sortedCats = allCats.sort((a, b) => {
+                    const idxA = priority.indexOf(a);
+                    const idxB = priority.indexOf(b);
+                    if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+                    if (idxA !== -1) return -1;
+                    if (idxB !== -1) return 1;
+                    return a.localeCompare(b);
+                });
+                return ["All", ...sortedCats];
+            }, []);
+
+            const getToolsByCategory = (category) => {
+                return rawData.filter(tool => {
+                    const matchesCategory = tool.category === category;
+                    const matchesSearch = tool.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                                          tool.desc.toLowerCase().includes(searchQuery.toLowerCase());
+                    return matchesCategory && matchesSearch;
+                });
+            };
+
+            const displayedCategories = useMemo(() => {
+                if (activeCategory === "All") {
+                    return categories.filter(c => c !== "All");
+                }
+                return [activeCategory];
+            }, [activeCategory, categories]);
+
+            const hasAnyResults = useMemo(() => {
+                return displayedCategories.some(cat => getToolsByCategory(cat).length > 0);
+            }, [displayedCategories, searchQuery]);
+
+            return (
+                <div className="min-h-screen bg-gray-50/50 pb-20 selection:bg-indigo-100 selection:text-primary">
+                    <BackButton />
+                    
+                    {/* Hero Header Section */}
+                    <header className="relative bg-white border-b border-gray-200 pt-24 pb-12 px-6 overflow-hidden">
+                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-7xl pointer-events-none overflow-hidden">
+                            <div className="absolute top-10 right-10 w-64 h-64 bg-indigo-50 rounded-full blur-3xl opacity-60"></div>
+                            <div className="absolute bottom-10 left-10 w-48 h-48 bg-rose-50 rounded-full blur-3xl opacity-60"></div>
+                        </div>
+
+                        <div className="relative max-w-7xl mx-auto text-center z-10">
+                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-bold tracking-wide uppercase mb-6 animate-fade-in-up">
+                                <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
+                                Senior Frontend Engineer
+                            </div>
+                            
+                            <div className="flex items-center justify-center gap-4 mb-6">
+                                <img src="https://i.imgur.com/OQwyeIV.png" alt="Logo" className="w-12 h-12 md:w-16 md:h-16 object-contain rounded-full shadow-md" />
+                                <h1 className="text-4xl md:text-6xl font-extrabold text-text tracking-tight">
+                                    教學設計輔助工具 <span className="text-primary">(TDA)</span>
+                                </h1>
+                            </div>
+
+                            <p className="text-lg text-muted max-w-2xl mx-auto mb-10 leading-relaxed">
+                                匯集教學輔助、AI 應用、開發工具與模擬體驗的個人導航站。<br/>
+                                旨在提升教學效率、激發創意靈感。
+                            </p>
+
+                            <div className="relative max-w-xl mx-auto group">
+                                <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-rose-500 rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+                                <div className="relative">
+                                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400">
+                                        <LucideIcon name="Search" className="w-5 h-5" />
+                                    </div>
+                                    <input
+                                        type="text"
+                                        placeholder="搜尋工具名稱、關鍵字或描述..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className="block w-full pl-12 pr-4 py-4 border-0 rounded-xl leading-5 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary shadow-lg"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </header>
+
+                    <main className="max-w-7xl mx-auto px-6 mt-10">
+                        <div className="sticky top-0 z-40 bg-gray-50/95 backdrop-blur-sm py-4 -mx-6 px-6 md:static md:bg-transparent md:p-0 mb-12 border-b border-gray-200 md:border-0">
+                            <div className="flex overflow-x-auto gap-2 no-scrollbar md:flex-wrap md:justify-center pb-2 md:pb-0">
+                                {categories.map(cat => (
+                                    <CategoryBadge 
+                                        key={cat} 
+                                        label={cat} 
+                                        active={activeCategory === cat}
+                                        onClick={() => setActiveCategory(cat)}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="min-h-[400px] space-y-16">
+                            {hasAnyResults ? (
+                                displayedCategories.map((category, index) => {
+                                    const tools = getToolsByCategory(category);
+                                    
+                                    // Ken Cheng TDA Special Handling
+                                    if (category === "Ken Cheng製作的TDA") {
+                                         const subCatOrder = ["教學TDA", "數學TDA", "電腦", "科學"];
+                                         const groupedTools = {};
+                                         tools.forEach(tool => {
+                                             const sub = tool.subcategory || "Other";
+                                             if (!groupedTools[sub]) groupedTools[sub] = [];
+                                             groupedTools[sub].push(tool);
+                                         });
+                                         
+                                         if (tools.length === 0) return null;
+
+                                         return (
+                                            <section key={category} className="animate-fade-in space-y-8">
+                                                <div className="flex items-center gap-3 border-l-4 border-primary pl-4">
+                                                    <h2 className="text-2xl font-bold text-gray-800 tracking-tight">{category}</h2>
+                                                    <span className="bg-gray-100 text-gray-600 text-xs font-semibold px-2.5 py-0.5 rounded-full">{tools.length}</span>
+                                                </div>
+                                                <div className="pl-0 md:pl-4 space-y-8">
+                                                    {subCatOrder.map(subCat => {
+                                                        const subTools = groupedTools[subCat];
+                                                        if (!subTools || subTools.length === 0) return null;
+                                                        
+                                                        let SubIcon = "Circle";
+                                                        if (subCat === "教學TDA") SubIcon = "BookOpen";
+                                                        if (subCat === "數學TDA") SubIcon = "Calculator";
+                                                        if (subCat === "電腦") SubIcon = "Monitor";
+                                                        if (subCat === "科學") SubIcon = "Atom";
+
+                                                        return (
+                                                            <div key={subCat} className="space-y-4">
+                                                                <h3 className="text-lg font-semibold text-gray-600 flex items-center gap-2 border-b border-gray-100 pb-2">
+                                                                    <LucideIcon name={SubIcon} className="w-5 h-5 text-indigo-500" />
+                                                                    {subCat}
+                                                                </h3>
+                                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                                                    {subTools.map((tool, idx) => (
+                                                                        <ToolCard key={tool.name + idx} tool={tool} onShowQR={handleShowQR} />
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </section>
+                                         );
+                                    }
+
+                                    const showDivider = activeCategory === "All" && index === 2;
+
+                                    if (tools.length === 0 && !showDivider) return null;
+                                    
+                                    return (
+                                        <React.Fragment key={category}>
+                                            {showDivider && (
+                                                <div className="py-12 animate-fade-in">
+                                                    <div className="relative flex items-center justify-center">
+                                                        <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                                                            <div className="w-full border-t-2 border-dashed border-gray-300"></div>
+                                                        </div>
+                                                        <div className="relative flex justify-center">
+                                                            <span className="bg-gray-50 px-6 py-2 text-xl font-bold text-gray-500 tracking-wider border-2 border-dashed border-gray-300 rounded-full uppercase shadow-sm">
+                                                                其他/外部教學設計輔助工具
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {tools.length > 0 && (
+                                                <section className="animate-fade-in">
+                                                    <div className="flex items-center gap-3 mb-6 border-l-4 border-primary pl-4">
+                                                        <h2 className="text-2xl font-bold text-gray-800 tracking-tight">{category}</h2>
+                                                        <span className="bg-gray-100 text-gray-600 text-xs font-semibold px-2.5 py-0.5 rounded-full">{tools.length}</span>
+                                                    </div>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                                        {tools.map((tool, idx) => (
+                                                            <ToolCard key={tool.name + idx} tool={tool} onShowQR={handleShowQR} />
+                                                        ))}
+                                                    </div>
+                                                </section>
+                                            )}
+                                        </React.Fragment>
+                                    );
+                                })
+                            ) : (
+                                <div className="flex flex-col items-center justify-center py-20 text-center animate-pulse">
+                                    <div className="bg-white p-6 rounded-full shadow-sm mb-4">
+                                        <LucideIcon name="Search" className="w-10 h-10 text-gray-300" />
+                                    </div>
+                                    <h3 className="text-xl font-bold text-text mb-2">找不到相關工具</h3>
+                                    <p className="text-muted">請嘗試調整搜尋關鍵字或切換分類。</p>
+                                    <button 
+                                        onClick={() => {setSearchQuery(""); setActiveCategory("All")}}
+                                        className="mt-6 text-primary font-semibold hover:underline"
+                                    >
+                                        清除所有篩選
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </main>
+
+                    <footer className="max-w-7xl mx-auto px-6 mt-20 text-center border-t border-gray-200 pt-12 pb-24">
+                        <div className="flex justify-center gap-6 mb-6">
+                            <a href="#" className="text-gray-400 hover:text-primary transition-colors"><LucideIcon name="Bot" className="w-5 h-5"/></a>
+                            <a href="#" className="text-gray-400 hover:text-primary transition-colors"><LucideIcon name="Code" className="w-5 h-5"/></a>
+                            <a href="#" className="text-gray-400 hover:text-primary transition-colors"><LucideIcon name="Zap" className="w-5 h-5"/></a>
+                        </div>
+                        <p className="text-sm text-muted">
+                            © 2025 Ken Cheng Created with Gemini Script & Tailwind CSS
+                        </p>
+                    </footer>
+
+                    <FloatingBadge />
+                    
+                    {/* Render Modal if active */}
+                    {qrModalData && (
+                        <QRCodeModal 
+                            url={qrModalData.url} 
+                            title={qrModalData.name} 
+                            onClose={() => setQrModalData(null)} 
+                        />
+                    )}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<MainApp />);
+    </script>
+</body>
+</html>
