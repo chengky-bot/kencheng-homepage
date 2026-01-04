@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ken Cheng的 教學設計輔助工具 (TDA) | Resource Dashboard</title>
+    <title>Ken Cheng的 電子教學工具 | Resource Dashboard</title>
     
     <!-- React & ReactDOM -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
@@ -168,6 +168,7 @@
             { name: "一元一次方程天平遊戲", url: "https://app-e009ccc3.base44.app", desc: "利用天平原理視覺化解方程過程。", category: "Ken Cheng製作的TDA", subcategory: "數學TDA", icon: "Scale" },
             { name: "小數加法樂園", url: "https://app-ec28e701.base44.app", desc: "專為小學生設計的小數加法練習工具。", category: "Ken Cheng製作的TDA", subcategory: "數學TDA", icon: "Calculator" },
             { name: "數學2位減法樂園", url: "https://chengky-bot.github.io/math-2digit-subtract/", desc: "專為小學生設計的兩位數減法練習工具。", category: "Ken Cheng製作的TDA", subcategory: "數學TDA", icon: "Calculator" },
+            { name: "10的分解", url: "https://chengky-bot.github.io/Subtraction-within-10/", desc: "學習 10 的組合與分解，建立數感基礎。", category: "Ken Cheng製作的TDA", subcategory: "數學TDA", icon: "Calculator" },
             { name: "2D 圖形認識", url: "https://app-387d1d6d.base44.app/", desc: "互動式認識各種平面圖形的特徵與名稱。", category: "Ken Cheng製作的TDA", subcategory: "數學TDA", icon: "Shapes" },
             { name: "4位數字比較遊戲", url: "https://chengky-bot.github.io/4digit-compare/", desc: "趣味的 4 位數大小比較練習遊戲。", category: "Ken Cheng製作的TDA", subcategory: "數學TDA", icon: "Binary" },
 
@@ -181,6 +182,7 @@
             { name: "物質溶解實驗", url: "https://v0-elementary-science-experiment.vercel.app/", desc: "觀察不同物質在水中的溶解現象。", category: "Ken Cheng製作的TDA", subcategory: "科學", icon: "Beaker" },
             { name: "浮力模擬", url: "https://chat.qwen.ai/s/deploy/7eba41bb-8e71-4396-a333-bb9901d78cba", desc: "互動式浮力實驗，了解物體沈浮原理。", category: "Ken Cheng製作的TDA", subcategory: "科學", icon: "Ship" },
             { name: "浮力遊戲 (POE)", url: "https://poe.com/floatgame", desc: "基於 POE 的浮力問答與互動遊戲。", category: "Ken Cheng製作的TDA", subcategory: "科學", icon: "Ship" },
+            { name: "科學互動工具 (Base44)", url: "https://app-b842392d.base44.app", desc: "基於 Base44 的互動科學模擬工具。", category: "Ken Cheng製作的TDA", subcategory: "科學", icon: "TestTube" },
 
             // --- School Platforms (Priority 2) ---
             { name: "GNS AI", url: "https://chat.ai.gns.hk/login", desc: "校本 AI 聊天平台，支援教學與學習互動。", category: "常用校本電子平台/工具", icon: "MessageCircle" },
@@ -316,7 +318,8 @@
             Scale: <i data-lucide="scale"></i>,
             Shapes: <i data-lucide="shapes"></i>,
             Binary: <i data-lucide="binary"></i>,
-            Laptop: <i data-lucide="laptop"></i>
+            Laptop: <i data-lucide="laptop"></i>,
+            TestTube: <i data-lucide="test-tube"></i>
         };
 
         const LucideIcon = ({ name, className }) => {
@@ -742,7 +745,7 @@
                             <div className="flex items-center justify-center gap-4 mb-6">
                                 <img src="https://i.imgur.com/OQwyeIV.png" alt="Logo" className={`w-12 h-12 md:w-16 md:h-16 object-contain rounded-full shadow-md transition-shadow duration-500 ${isCyberMode ? 'shadow-cyan-500/50' : ''}`} />
                                 <h1 className={`text-4xl md:text-6xl font-extrabold tracking-tight transition-colors duration-500 ${isCyberMode ? 'text-white drop-shadow-[0_0_10px_rgba(34,211,238,0.5)]' : 'text-text'}`}>
-                                    Ken Cheng的 教學設計輔助工具 <span className={`transition-colors duration-500 ${isCyberMode ? 'text-cyan-400' : 'text-primary'}`}>(TDA)</span>
+                                    Ken Cheng的 電子教學工具 <span className={`transition-colors duration-500 ${isCyberMode ? 'text-cyan-400' : 'text-primary'}`}>(TDA)</span>
                                 </h1>
                             </div>
 
@@ -805,11 +808,26 @@
 
                                          return (
                                             <section key={category} className="animate-fade-in space-y-8">
-                                                <div className={`flex items-center gap-3 border-l-4 pl-4 transition-colors duration-500 ${isCyberMode ? 'border-cyan-500' : 'border-primary'}`}>
-                                                    <h2 className={`text-2xl font-bold tracking-tight transition-colors duration-500 ${isCyberMode ? 'text-cyan-50' : 'text-gray-800'}`}>{category}</h2>
-                                                    <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full transition-colors duration-500 ${isCyberMode ? 'bg-slate-800 text-cyan-400' : 'bg-gray-100 text-gray-600'}`}>{tools.length}</span>
+                                                <div className={`flex flex-col md:flex-row md:items-center justify-between gap-4 border-l-4 pl-4 transition-colors duration-500 ${isCyberMode ? 'border-cyan-500' : 'border-primary'}`}>
+                                                    <div className="flex items-center gap-3">
+                                                        <h2 className={`text-2xl font-bold tracking-tight transition-colors duration-500 ${isCyberMode ? 'text-cyan-50' : 'text-gray-800'}`}>{category}</h2>
+                                                        <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full transition-colors duration-500 ${isCyberMode ? 'bg-slate-800 text-cyan-400' : 'bg-gray-100 text-gray-600'}`}>{tools.length}</span>
+                                                    </div>
+                                                    {/* Shortcuts */}
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {subCatOrder.map(sub => (
+                                                            <button
+                                                                key={sub}
+                                                                onClick={() => document.getElementById(`subcat-${sub}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+                                                                className={`px-3 py-1 text-xs font-medium rounded-full transition-all border ${isCyberMode ? 'bg-slate-800 border-cyan-500/50 text-cyan-300 hover:bg-cyan-900/50' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-primary'}`}
+                                                            >
+                                                                {sub}
+                                                            </button>
+                                                        ))}
+                                                    </div>
                                                 </div>
-                                                <div className="pl-0 md:pl-4 space-y-8">
+                                                
+                                                <div className="pl-0 md:pl-4 space-y-12">
                                                     {subCatOrder.map(subCat => {
                                                         const subTools = groupedTools[subCat];
                                                         if (!subTools || subTools.length === 0) return null;
@@ -821,7 +839,7 @@
                                                         if (subCat === "科學") SubIcon = "Atom";
 
                                                         return (
-                                                            <div key={subCat} className="space-y-4">
+                                                            <div key={subCat} id={`subcat-${subCat}`} className="space-y-4 scroll-mt-24">
                                                                 <h3 className={`text-lg font-semibold flex items-center gap-2 border-b pb-2 transition-colors duration-500 ${isCyberMode ? 'text-slate-300 border-slate-800' : 'text-gray-600 border-gray-100'}`}>
                                                                     <LucideIcon name={SubIcon} className={`w-5 h-5 transition-colors duration-500 ${isCyberMode ? 'text-fuchsia-400' : 'text-indigo-500'}`} />
                                                                     {subCat}
